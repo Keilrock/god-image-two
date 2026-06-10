@@ -28,6 +28,7 @@ from core.config.config_handler import save_config, save_config_toml
 from core.dataset.prepare_diffusion_dataset import prepare_dataset
 from core.models.utility_models import ImageModelType
 from auto_caption import auto_caption_dataset, detect_dataset_type
+from model_selector import get_model_config, get_recipe_path
 
 
 def get_model_path(path: str) -> str:
@@ -115,6 +116,14 @@ def create_config(task_id, model_path, model_name, model_type, expected_repo_nam
     
     detected_type = detect_dataset_type(train_data_dir)
     print(f"Auto-detected dataset type: {detected_type}", flush=True)
+
+    # Get model config based on dataset type
+    model_cfg = get_model_config(detected_type)
+    
+    # Override model path with selected model
+    model_path = model_cfg["primary_model"]
+    model_name = model_cfg["primary_model"]
+    print(f"Using model: {model_name} for {detected_type} dataset", flush=True)
 
     is_ai_toolkit = model_type in [ImageModelType.Z_IMAGE.value, ImageModelType.QWEN_IMAGE.value]
     

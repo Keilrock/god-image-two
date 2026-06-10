@@ -1,0 +1,19 @@
+{
+    "default": {
+        "optimizer_type": "adamw8bit",
+        "learning_rate": 8e-5,
+        "lr_scheduler": "cosine",
+        "lr_warmup_steps": 100,
+        "network_dim": 64,
+        "network_alpha": 64,
+        "network_module": "lora",
+        "max_train_epochs": 15,
+        "save_every_n_epochs": 5,
+        "mixed_precision": "bf16",
+        "gradient_checkpointing": true,
+        "caption_dropout_rate": 0.15,
+        "noise_offset": 0.1,
+        "keep_tokens": 1,
+        "lr_scheduler_num_cycles": 1
+    }
+}
