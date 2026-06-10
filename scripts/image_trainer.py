@@ -317,7 +317,20 @@ def create_config(task_id, model_path, model_name, model_type, expected_repo_nam
              print(f"Warning: No size-specific configuration (xs/s/m/l/xl) found for model '{model_name}' with {dataset_size} images. Using model defaults.", flush=True)
         
         config["caption_dropout_rate"] = 0.1
+    
+    # Anti-overfit: apply dataset-specific regularization
+    if model_cfg.get("anti_overfit", False):
+        print(f"Applying anti-overfit measures for {detected_type} dataset", flush=True)
+        config["min_snr_gamma"] = 5.0
+        config["scale_v_pred_loss"] = True
+        if "network_args" not in config:
+            config["network_args"] = []
+        config["network_args"].append("dropout=0.15")
         
+        # Early stopping config
+        if "early_stopping_patience" in model_cfg:
+            config["early_stopping_patience"] = model_cfg["early_stopping_patience"]
+    
         config_path = os.path.join(train_cst.IMAGE_CONTAINER_CONFIG_SAVE_PATH, f"{task_id}.toml")
         save_config_toml(config, config_path)
         print(f"config is {config}", flush=True)
