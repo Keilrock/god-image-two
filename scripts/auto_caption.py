@@ -3,6 +3,64 @@ import gc
 import traceback
 from pathlib import Path
 
+def detect_dataset_type(dataset_dir: str) -> str:
+    import cv2
+    import numpy as np
+    
+    image_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.bmp'}
+    face_counts = []
+    color_variances = []
+    edge_densities = []
+    sample_count = 0
+    max_samples = 20
+    
+    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    
+    for root, _, files in os.walk(dataset_dir):
+        for file in files:
+            if sample_count >= max_samples:
+                break
+            file_path = Path(os.path.join(root, file))
+            if file_path.suffix.lower() in image_extensions:
+                try:
+                    img = cv2.imread(str(file_path))
+                    if img is None:
+                        continue
+                    
+                    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                    faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+                    face_counts.append(len(faces))
+                    
+                    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+                    color_var = np.std(hsv[:,:,0])
+                    color_variances.append(color_var)
+                    
+                    edges = cv2.Canny(gray, 100, 200)
+                    edge_density = np.mean(edges) / 255.0
+                    edge_densities.append(edge_density)
+                    
+                    sample_count += 1
+                except Exception:
+                    continue
+    
+    if sample_count == 0:
+        return "person"
+    
+    avg_faces = np.mean(face_counts) if face_counts else 0
+    avg_color_var = np.mean(color_variances) if color_variances else 0
+    avg_edge_density = np.mean(edge_densities) if edge_densities else 0
+    
+    print(f"Dataset Analysis: avg_faces={avg_faces:.1f}, color_var={avg_color_var:.1f}, edge_density={avg_edge_density:.3f}")
+    
+    if avg_faces >= 0.5:
+        return "person"
+    elif avg_edge_density > 0.15 and avg_color_var < 30:
+        return "sculpture"
+    elif avg_color_var > 40:
+        return "style"
+    else:
+        return "concept"
+
 def auto_caption_dataset(dataset_dir: str, category: str = "style"):
     print(f"--- Starting LLaVA v1.5 7B Auto-Captioning for {dataset_dir} (Category: {category}) ---", flush=True)
 

@@ -27,7 +27,7 @@ import trainer.utils.training_paths as train_paths
 from core.config.config_handler import save_config, save_config_toml
 from core.dataset.prepare_diffusion_dataset import prepare_dataset
 from core.models.utility_models import ImageModelType
-from auto_caption import auto_caption_dataset
+from auto_caption import auto_caption_dataset, detect_dataset_type
 
 
 def get_model_path(path: str) -> str:
@@ -112,6 +112,9 @@ def create_config(task_id, model_path, model_name, model_type, expected_repo_nam
 
     """Create the diffusion config file"""
     config_template_path, is_style = train_paths.get_image_training_config_template_path(model_type, train_data_dir)
+    
+    detected_type = detect_dataset_type(train_data_dir)
+    print(f"Auto-detected dataset type: {detected_type}", flush=True)
 
     is_ai_toolkit = model_type in [ImageModelType.Z_IMAGE.value, ImageModelType.QWEN_IMAGE.value]
     
@@ -411,7 +414,8 @@ async def main():
 
     train_data_dir = train_paths.get_image_training_images_dir(args.task_id)
     _, is_style_dataset = train_paths.get_image_training_config_template_path(args.model_type, train_data_dir)
-    cat_str = "style" if is_style_dataset else "person"
+    cat_str = detect_dataset_type(train_data_dir)
+    print(f"Using detected dataset type for captioning: {cat_str}", flush=True)
     auto_caption_dataset(train_data_dir, cat_str)
 
     config_path = create_config(
